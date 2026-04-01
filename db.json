@@ -1,0 +1,39 @@
+{
+  "employees": [
+   {
+      "id": 1,
+      "name": "Admin",
+      "email": "admin@gmail.com",
+      "password": "123",
+      "roleId": 1,
+      "status": "Active"
+    }
+  ],
+  "roles": [
+    {
+      "name": "Employee",
+      "permissions": {
+        "Roles": {
+          "view": true
+        },
+        "Employees": {
+          "view": true
+        },
+        "Projects": {
+          "view": true
+        },
+        "Tasks": {
+          "view": true
+        },
+        "Notifications": {
+          "view": true
+        }
+      },
+      "id": "HH6e--_o26s"
+    }
+  ],
+  "projects": [],
+  "tasks": [],
+  "notifications": [],
+  "$schema": "./node_modules/json-server/schema.json"
+}
