@@ -1,215 +1,377 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import API from "../services/api";
 import { createNotification } from "../services/notificationService";
+import { AppContext } from "../Context/AppContext";
+import { Plus, Trash2, CheckCircle2, Clock, ListTodo, Calendar, User, Briefcase, Edit3 } from "lucide-react";
 
 const Tasks = () => {
+  const { user } = useContext(AppContext);
+
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
   const [employees, setEmployees] = useState([]);
-
+  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [tempTasks, setTempTasks] = useState([]);
+  const [editingTask, setEditingTask] = useState(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
-    projectId: "",
     assignedTo: "",
-    status: "To Do",
     priority: "Low",
     dueDate: "",
   });
 
-  // 🔄 fetch data
   const fetchData = async () => {
     const [t, p, e] = await Promise.all([
       API.get("/tasks"),
       API.get("/projects"),
       API.get("/employees"),
     ]);
-
-    setTasks(t.data);
-    setProjects(p.data);
-    setEmployees(e.data);
+    setTasks(t.data || []);
+    setProjects(p.data || []);
+    setEmployees(e.data || []);
   };
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  // input change
+  const selectedProject = projects.find((p) => p.id === selectedProjectId);
+  const teamMembers = employees.filter((emp) => selectedProject?.team?.includes(emp.id));
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // filter team members based on project
-  const selectedProject = projects.find(
-    (p) => p.id === Number(form.projectId)
-  );
+  const addTempTask = () => {
+    if (!form.title || !form.assignedTo) {
+      alert("Fill all fields");
+      return;
+    }
+    setTempTasks([...tempTasks, { ...form, projectId: selectedProjectId, status: "To Do" }]);
+    setForm({ title: "", description: "", assignedTo: "", priority: "Low", dueDate: "" });
+  };
 
-  const teamMembers = employees.filter((emp) =>
-    selectedProject?.team?.includes(emp.id)
-  );
+  const removeTempTask = (index) => {
+    const updated = [...tempTasks];
+    updated.splice(index, 1);
+    setTempTasks(updated);
+  };
 
-  // ➕ add task
- const handleAdd = async () => {
-  if (!form.title || !form.projectId) {
-    alert("Fill required fields");
-    return;
-  }
+  const handleSubmitAll = async () => {
+    if (tempTasks.length === 0) {
+      alert("No tasks added");
+      return;
+    }
+    for (let task of tempTasks) {
+      await API.post("/tasks", task);
 
-  const res = await API.post("/tasks", {
-    ...form,
-    projectId: Number(form.projectId),
-    assignedTo: Number(form.assignedTo),
-  });
+      const assignedEmp = employees.find((e) => e.id === task.assignedTo);
 
-  // 🔔 notify assigned user
-  await createNotification({
-    message: `You have a new task: ${form.title}`,
-    userId: Number(form.assignedTo),
-    type: "task",
-    read: false,
-  });
+      // ✅ Notification for Employee
+      await createNotification({
+        message: `New task assigned: ${task.title}`,
+        userId: task.assignedTo,
+        senderId: "ADMIN",
+        senderName: "Admin",
+        receiverName: assignedEmp?.name,
+        type: "task",
+        read: false,
+        createdAt: new Date().toISOString(),
+      });
 
-  setForm({
-    title: "",
-    description: "",
-    projectId: "",
-    assignedTo: "",
-    status: "To Do",
-    priority: "Low",
-    dueDate: "",
-  });
+      // ✅ Separate Notification for Admin (log)
+      await createNotification({
+        message: `Task "${task.title}" assigned to ${assignedEmp?.name}`,
+        userId: "ADMIN",
+        senderId: "ADMIN",
+        senderName: "Admin",
+        type: "task",
+        read: false,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    setTempTasks([]);
+    setSelectedProjectId("");
+    fetchData();
+  };
 
-  fetchData();
-};
+  const updateStatus = async (task, status) => {
+    await API.put(`/tasks/${task.id}`, { ...task, status });
+    if (status === "Done") {
+      await createNotification({
+        message: `Task "${task.title}" completed`,
+        userId: "ADMIN",
+        senderId: user.id,
+        senderName: user.name,
+        type: "task",
+        read: false,
+        createdAt: new Date().toISOString(),
+      });
+
+      // ✅ Optional: notify employee themselves (history)
+      await createNotification({
+        message: `You completed task: ${task.title}`,
+        userId: user.id,
+        senderId: user.id,
+        senderName: user.name,
+        type: "task",
+        read: false,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    fetchData();
+  };
+
+  const visibleTasks = user?.isAdmin ? tasks : tasks.filter((t) => t.assignedTo === user.id);
+
+  // Status Badge Helper
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case "Done": return "bg-emerald-100 text-emerald-700 border-emerald-200";
+      case "In Progress": return "bg-amber-100 text-amber-700 border-amber-200";
+      default: return "bg-slate-100 text-slate-700 border-slate-200";
+    }
+  };
+
+  // ✏️ EDIT TASK
+  const handleEditTask = (task) => {
+    setEditingTask(task.id);
+    setForm({
+      title: task.title,
+      description: task.description,
+      assignedTo: task.assignedTo,
+      priority: task.priority,
+      dueDate: task.dueDate,
+    });
+    setSelectedProjectId(task.projectId);
+  };
+
+  // 💾 UPDATE TASK
+  const handleUpdateTask = async () => {
+    if (!editingTask) return;
+
+    await API.put(`/tasks/${editingTask}`, {
+      ...form,
+      projectId: selectedProjectId,
+      status: "To Do", // keep or preserve if needed
+    });
+
+    setEditingTask(null);
+    setForm({
+      title: "",
+      description: "",
+      assignedTo: "",
+      priority: "Low",
+      dueDate: "",
+    });
+
+    fetchData();
+  };
+
+  // 🗑 DELETE TASK
+  const handleDeleteTask = async (id) => {
+    const confirmDelete = confirm("Delete this task?");
+    if (!confirmDelete) return;
+
+    await API.delete(`/tasks/${id}`);
+    fetchData();
+  };
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-5">Tasks</h1>
+    <div className="p-8 bg-slate-50 min-h-screen text-slate-900">
+      <header className="mb-8">
+        <h1 className="text-4xl font-black tracking-tight flex items-center gap-3">
+          <ListTodo className="text-indigo-600" size={36} />
+          Task Management
+        </h1>
+        <p className="text-slate-500 mt-2 font-medium">Organize, track, and complete your project milestones.</p>
+      </header>
 
-      {/* Form */}
-      <div className="bg-white p-5 rounded shadow mb-6">
-        <h2 className="text-lg font-semibold mb-3">Create Task</h2>
+      {/* 🛠 ADMIN TASK CREATION PANEL */}
+      {user?.isAdmin && (
+        <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 mb-10 transition-all hover:shadow-md">
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+            <Plus className="bg-indigo-100 text-indigo-600 rounded-lg p-1" />
+            Quick Assign
+          </h2>
 
-        <div className="flex flex-wrap gap-3">
-          <input
-            name="title"
-            value={form.title}
-            onChange={handleChange}
-            placeholder="Task Title"
-            className="border px-3 py-2 rounded w-48"
-          />
+          <div className="space-y-6">
+            <select
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              className="w-full md:w-1/3 bg-slate-50 border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 transition-all font-medium"
+            >
+              <option value="">Select Project Target</option>
+              {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
 
-          <input
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            placeholder="Description"
-            className="border px-3 py-2 rounded w-48"
-          />
+            {selectedProject && (
+              <div className="grid md:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2">
+                <input name="title" value={form.title} onChange={handleChange} placeholder="Task Title" className="bg-slate-50 border-slate-200 rounded-xl px-4 py-3" />
+                <input name="description" value={form.description} onChange={handleChange} placeholder="Brief details..." className="bg-slate-50 border-slate-200 rounded-xl px-4 py-3" />
+                <select name="assignedTo" value={form.assignedTo} onChange={handleChange} className="bg-slate-50 border-slate-200 rounded-xl px-4 py-3">
+                  <option value="">Assign To Employee</option>
+                  {teamMembers.map((emp) => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
+                </select>
+                <input type="date" name="dueDate" value={form.dueDate} onChange={handleChange} className="bg-slate-50 border-slate-200 rounded-xl px-4 py-3" />
 
-          {/* Project */}
-          <select
-            name="projectId"
-            value={form.projectId}
-            onChange={handleChange}
-            className="border px-3 py-2 rounded w-48"
-          >
-            <option value="">Select Project</option>
-            {projects.map((proj) => (
-              <option key={proj.id} value={proj.id}>
-                {proj.name}
-              </option>
-            ))}
-          </select>
+                {/* <button onClick={addTempTask} className="md:col-span-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2">
+                  <Plus size={20} /> Buffer Task
+                </button> */}
+                <button
+                  onClick={editingTask ? handleUpdateTask : addTempTask}
+                  className="md:col-span-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus size={20} />
+                  {editingTask ? "Update Task" : "Buffer Task"}
+                </button>
+              </div>
+            )}
 
-          {/* Assign user (filtered) */}
-          <select
-            name="assignedTo"
-            value={form.assignedTo}
-            onChange={handleChange}
-            className="border px-3 py-2 rounded w-48"
-          >
-            <option value="">Assign To</option>
-            {teamMembers.map((emp) => (
-              <option key={emp.id} value={emp.id}>
-                {emp.name}
-              </option>
-            ))}
-          </select>
+            {tempTasks.length > 0 && (
+              <div className="mt-8 pt-8 border-t border-dashed border-slate-200">
+                <h3 className="font-bold text-slate-400 uppercase text-xs tracking-widest mb-4">Preparation Queue</h3>
+                <div className="grid gap-3">
+                  {tempTasks.map((t, i) => (
+                    <div key={i} className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <span className="font-semibold text-slate-700">{t.title} <span className="text-slate-400 font-normal">assigned to</span> {employees.find(e => e.id === t.assignedTo)?.name}</span>
+                      <button onClick={() => removeTempTask(i)} className="text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition-colors"><Trash2 size={18} /></button>
+                    </div>
+                  ))}
+                  <button onClick={handleSubmitAll} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-emerald-100 mt-4">
+                    Confirm & Dispatch All Notifications
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
-          {/* Status */}
-          <select
-            name="status"
-            value={form.status}
-            onChange={handleChange}
-            className="border px-3 py-2 rounded"
-          >
-            <option>To Do</option>
-            <option>In Progress</option>
-            <option>Done</option>
-          </select>
+      {/* 📋 TASK LIST VIEW */}
+      {user?.isAdmin ? (
+        <div className="grid lg:grid-cols-2 gap-8">
+          {projects.map((project) => {
+            const projectTasks = tasks.filter((t) => t.projectId === project.id);
+            if (projectTasks.length === 0) return null;
 
-          {/* Priority */}
-          <select
-            name="priority"
-            value={form.priority}
-            onChange={handleChange}
-            className="border px-3 py-2 rounded"
-          >
-            <option>Low</option>
-            <option>Medium</option>
-            <option>High</option>
-          </select>
+            const total = projectTasks.length;
+            const completed = projectTasks.filter(t => t.status === "Done").length;
+            const progress = Math.round((completed / total) * 100);
 
-          <input
-            type="date"
-            name="dueDate"
-            value={form.dueDate}
-            onChange={handleChange}
-            className="border px-3 py-2 rounded"
-          />
+            return (
+              <div key={project.id} className="bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden">
+                <div className="p-6 border-b border-slate-50 bg-slate-50/50">
+                  <div className="flex justify-between items-start mb-4">
+                    <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                      <Briefcase className="text-indigo-500" size={20} /> {project.name}
+                    </h2>
+                    <span className="bg-white px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-slate-100">{progress}% Complete</span>
+                  </div>
+                  <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                    <div className="bg-indigo-500 h-full transition-all duration-1000" style={{ width: `${progress}%` }} />
+                  </div>
+                </div>
 
-          <button
-            onClick={handleAdd}
-            className="bg-green-600 text-white px-4 py-2 rounded"
-          >
-            Add
-          </button>
+                <div className="p-6 space-y-4 flex-1">
+                  {projectTasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="flex justify-between items-center p-4 rounded-2xl border border-slate-50 hover:border-indigo-100 transition-all group">
+                      <div>
+                        <p className="font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">
+                          {task.title}
+                        </p>
+                        <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
+                          <User size={12} /> {employees.find(e => e.id === task.assignedTo)?.name}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {/* Status */}
+                        <span
+                          className={`text-[10px] uppercase tracking-widest font-black px-3 py-1 rounded-lg border ${getStatusStyle(task.status)}`}
+                        >
+                          {task.status}
+                        </span>
+
+                        {/* ✏️ Edit */}
+                        <button
+                          onClick={() => handleEditTask(task)}
+                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"><Edit3 size={16} />
+
+                        </button>
+
+                        {/* 🗑 Delete */}
+                        <button
+                          onClick={() => handleDeleteTask(task.id)}
+                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      </div>
-
-      {/* Task List */}
-      <div className="bg-white p-5 rounded shadow">
-        <h2 className="text-lg font-semibold mb-3">Tasks List</h2>
-
-        {tasks.map((task) => {
-          const project = projects.find(
-            (p) => p.id === task.projectId
-          );
-          const user = employees.find(
-            (e) => e.id === task.assignedTo
-          );
-
-          return (
-            <div key={task.id} className="border p-3 rounded mb-3">
-              <h3 className="font-bold">{task.title}</h3>
-              <p>{task.description}</p>
-
-              <p className="text-sm">
-                Project: {project?.name} | Assigned: {user?.name}
-              </p>
-
-              <p className="text-sm">
-                Status: {task.status} | Priority: {task.priority}
-              </p>
-
-              <p className="text-sm text-gray-600">
-                Due: {task.dueDate}
-              </p>
+      ) : (
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-black">My Personal Backlog</h2>
+            <div className="flex gap-2">
+              <span className="bg-indigo-50 text-indigo-600 px-4 py-1 rounded-full text-sm font-bold">{visibleTasks.length} Tasks Total</span>
             </div>
-          );
-        })}
-      </div>
+          </div>
+
+          {visibleTasks.length === 0 ? (
+            <div className="text-center py-20 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+              <CheckCircle2 size={48} className="mx-auto text-slate-300 mb-4" />
+              <p className="text-slate-500 font-medium">All caught up! No pending tasks.</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {visibleTasks.map((task) => {
+                const project = projects.find(p => p.id === task.projectId);
+                return (
+                  <div key={task.id} className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 flex flex-col shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="text-[10px] font-black uppercase text-indigo-500 tracking-tighter bg-indigo-50 px-2 py-0.5 rounded italic">
+                        {project?.name || "No Project"}
+                      </span>
+                      <Calendar size={16} className="text-slate-300" />
+                    </div>
+
+                    <h3 className="font-bold text-lg mb-2 text-slate-800 leading-tight">{task.title}</h3>
+                    <p className="text-sm text-slate-500 mb-6 flex-1 line-clamp-2">{task.description}</p>
+
+                    <div className="mt-auto pt-4 border-t border-slate-100 flex flex-col gap-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
+                          <Clock size={14} /> {task.dueDate}
+                        </span>
+                      </div>
+
+                      <select
+                        value={task.status}
+                        onChange={(e) => updateStatus(task, e.target.value)}
+                        className={`w-full font-bold py-2 rounded-xl border text-sm transition-all focus:ring-4 focus:ring-slate-100 ${getStatusStyle(task.status)}`}
+                      >
+                        <option value="To Do">To Do</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Done">Done</option>
+                      </select>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

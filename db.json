@@ -1,39 +1,310 @@
 {
+  "admin": {
+    "email": "admin@gmail.com",
+    "password": "123"
+  },
   "employees": [
-   {
-      "id": 1,
-      "name": "Admin",
-      "email": "admin@gmail.com",
+    {
+      "name": "hithul",
+      "email": "hi@gmail.com",
       "password": "123",
-      "roleId": 1,
-      "status": "Active"
+      "role": "Employee",
+      "status": "Active",
+      "id": "YDe3zZmFESc"
+    },
+    {
+      "name": "Arun",
+      "email": "xboxl1@gmail.com",
+      "password": "1245",
+      "role": "Employee",
+      "status": "Active",
+      "id": "8OFlFEzrhCA"
+    },
+    {
+      "name": "Fasal",
+      "email": "xboxl1712@gmail.com",
+      "password": "2255",
+      "role": "Employee",
+      "status": "Active",
+      "id": "P2DBgYV4lxs"
+    },
+    {
+      "name": "Abhi",
+      "email": "xboxl1712@gmail.com",
+      "password": "1254",
+      "role": "Employee",
+      "status": "Active",
+      "id": "c3KBPR6LPUo"
+    },
+    {
+      "name": "Sinan",
+      "email": "xboxl1@gmail.com",
+      "password": "8888",
+      "role": "Employee",
+      "status": "Active",
+      "id": "pxXJQK8Th7k"
     }
   ],
   "roles": [
     {
       "name": "Employee",
       "permissions": {
-        "Roles": {
-          "view": true
+        "Projects": {
+          "view": true,
+          "create": false
         },
-        "Employees": {
-          "view": true
+        "Tasks": {
+          "view": true,
+          "edit": true
+        },
+        "Roles": {
+          "view": false,
+          "create": false
+        }
+      },
+      "id": "2"
+    },
+    {
+      "name": "Developer",
+      "permissions": {
+        "Roles": {
+          "view": false
         },
         "Projects": {
           "view": true
         },
         "Tasks": {
-          "view": true
-        },
-        "Notifications": {
-          "view": true
+          "view": true,
+          "create": true,
+          "edit": true
         }
       },
-      "id": "HH6e--_o26s"
+      "id": "SJ3GI-sDPWE"
     }
   ],
-  "projects": [],
-  "tasks": [],
-  "notifications": [],
+  "projects": [
+    {
+      "name": "ihbjdcibhuf",
+      "description": "vjndjnv",
+      "startDate": "2026-04-13",
+      "endDate": "2026-04-29",
+      "team": [
+        "u3A_CmpaMUo",
+        "8OFlFEzrhCA",
+        "P2DBgYV4lxs"
+      ],
+      "id": "McMfFQtnm-0"
+    },
+    {
+      "name": "helloo",
+      "description": "cjdcjfc",
+      "startDate": "2026-04-06",
+      "endDate": "2026-04-27",
+      "team": [
+        "YDe3zZmFESc",
+        "8OFlFEzrhCA",
+        "u3A_CmpaMUo"
+      ],
+      "id": "8MD7Azzer58"
+    },
+    {
+      "name": "Hotel",
+      "description": "djbvjwer",
+      "startDate": "2026-04-05",
+      "endDate": "2026-04-28",
+      "team": [
+        "YDe3zZmFESc",
+        "8OFlFEzrhCA",
+        "P2DBgYV4lxs"
+      ],
+      "id": "HJQotvEi13g"
+    },
+    {
+      "name": "Manage",
+      "description": "cdjedc",
+      "startDate": "2026-04-12",
+      "endDate": "2026-04-28",
+      "team": [
+        "YDe3zZmFESc",
+        "8OFlFEzrhCA",
+        "P2DBgYV4lxs"
+      ],
+      "id": "pR3SVXVMQwM"
+    },
+    {
+      "name": "cdcebfvv",
+      "description": "dcdc",
+      "startDate": "2026-04-05",
+      "endDate": "2026-04-29",
+      "team": [
+        "YDe3zZmFESc",
+        "8OFlFEzrhCA",
+        "P2DBgYV4lxs",
+        "u3A_CmpaMUo"
+      ],
+      "id": "7ByfrA2fccE"
+    }
+  ],
+  "tasks": [
+    {
+      "title": "Front",
+      "description": "skchbhwdce",
+      "assignedTo": "YDe3zZmFESc",
+      "priority": "Low",
+      "dueDate": "2026-04-19",
+      "projectId": "HJQotvEi13g",
+      "status": "Done",
+      "id": "aVOfD2WRYB8"
+    },
+    {
+      "title": "edcfv",
+      "description": "devef",
+      "assignedTo": "YDe3zZmFESc",
+      "priority": "Low",
+      "dueDate": "2026-04-20",
+      "projectId": "pR3SVXVMQwM",
+      "status": "Done",
+      "id": "wxSYSW43SF0"
+    }
+  ],
+  "notifications": [
+    {
+      "message": "New task assigned: vefvhjr",
+      "userId": "8OFlFEzrhCA",
+      "senderId": "ADMIN",
+      "senderName": "Admin",
+      "receiverName": "Arun",
+      "type": "task",
+      "read": true,
+      "createdAt": "2026-04-02T13:10:03.988Z",
+      "id": "nd9Q9TIHgtk"
+    },
+    {
+      "message": "New task assigned: vefbrvtg",
+      "userId": "P2DBgYV4lxs",
+      "senderId": "ADMIN",
+      "senderName": "Admin",
+      "receiverName": "Fasal",
+      "type": "task",
+      "read": true,
+      "createdAt": "2026-04-02T13:10:04.045Z",
+      "id": "OBk0r2TBrzs"
+    },
+    {
+      "message": "You are assigned to project cdcebfvv",
+      "userId": "YDe3zZmFESc",
+      "senderId": "ADMIN",
+      "senderName": "Admin",
+      "receiverName": "hithul",
+      "type": "project",
+      "read": true,
+      "createdAt": "2026-04-02T13:10:36.314Z",
+      "id": "UNL_5QQ7nTY"
+    },
+    {
+      "message": "You are assigned to project cdcebfvv",
+      "userId": "8OFlFEzrhCA",
+      "senderId": "ADMIN",
+      "senderName": "Admin",
+      "receiverName": "Arun",
+      "type": "project",
+      "read": false,
+      "createdAt": "2026-04-02T13:10:36.331Z",
+      "id": "d6WwFi4Xgy4"
+    },
+    {
+      "message": "You are assigned to project cdcebfvv",
+      "userId": "P2DBgYV4lxs",
+      "senderId": "ADMIN",
+      "senderName": "Admin",
+      "receiverName": "Fasal",
+      "type": "project",
+      "read": false,
+      "createdAt": "2026-04-02T13:10:36.342Z",
+      "id": "erGzUHKELCM"
+    },
+    {
+      "message": "You are assigned to project cdcebfvv",
+      "userId": "u3A_CmpaMUo",
+      "senderId": "ADMIN",
+      "senderName": "Admin",
+      "receiverName": "Abhi",
+      "type": "project",
+      "read": false,
+      "createdAt": "2026-04-02T13:10:36.364Z",
+      "id": "MdpTZ1xvM6g"
+    },
+    {
+      "message": "Task \"skjchvwieh\" completed",
+      "userId": "ADMIN",
+      "senderId": "YDe3zZmFESc",
+      "senderName": "hithul",
+      "type": "task",
+      "read": true,
+      "createdAt": "2026-04-02T15:03:20.418Z",
+      "id": "3Ct1XWevjG8"
+    },
+    {
+      "message": "Task \"skjchvwieh\" completed",
+      "userId": "ADMIN",
+      "senderId": "YDe3zZmFESc",
+      "senderName": "hithul",
+      "type": "task",
+      "read": true,
+      "createdAt": "2026-04-03T03:54:32.144Z",
+      "id": "XHP5bbV-CbA"
+    },
+    {
+      "message": "New task assigned: edcfv",
+      "userId": "YDe3zZmFESc",
+      "senderId": "ADMIN",
+      "senderName": "Admin",
+      "receiverName": "hithul",
+      "type": "task",
+      "read": false,
+      "createdAt": "2026-04-03T04:59:15.888Z",
+      "id": "-MAEM9TZNd8"
+    },
+    {
+      "message": "Task \"Front\" completed",
+      "userId": "ADMIN",
+      "senderId": "YDe3zZmFESc",
+      "senderName": "hithul",
+      "type": "task",
+      "read": false,
+      "createdAt": "2026-04-03T05:04:48.620Z",
+      "id": "LZISKnYSIW8"
+    },
+    {
+      "message": "You completed task: Front",
+      "userId": "YDe3zZmFESc",
+      "senderId": "YDe3zZmFESc",
+      "senderName": "hithul",
+      "type": "task",
+      "read": false,
+      "createdAt": "2026-04-03T05:04:48.695Z",
+      "id": "Y0ChzKTkN_Y"
+    },
+    {
+      "message": "Task \"edcfv\" completed",
+      "userId": "ADMIN",
+      "senderId": "YDe3zZmFESc",
+      "senderName": "hithul",
+      "type": "task",
+      "read": false,
+      "createdAt": "2026-04-03T05:04:52.881Z",
+      "id": "rdoG01hliZk"
+    },
+    {
+      "message": "You completed task: edcfv",
+      "userId": "YDe3zZmFESc",
+      "senderId": "YDe3zZmFESc",
+      "senderName": "hithul",
+      "type": "task",
+      "read": false,
+      "createdAt": "2026-04-03T05:04:52.889Z",
+      "id": "jd437BRKhLw"
+    }
+  ],
   "$schema": "./node_modules/json-server/schema.json"
 }
