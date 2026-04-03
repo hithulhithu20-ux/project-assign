@@ -21,9 +21,7 @@ const Tasks = () => {
     dueDate: "",
   });
 
-  console.log(
-    "hhds"
-  );
+
   
 
   const fetchData = async () => {
