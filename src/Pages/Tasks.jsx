@@ -21,6 +21,11 @@ const Tasks = () => {
     dueDate: "",
   });
 
+  console.log(
+    "hhds"
+  );
+  
+
   const fetchData = async () => {
     const [t, p, e] = await Promise.all([
       API.get("/tasks"),
